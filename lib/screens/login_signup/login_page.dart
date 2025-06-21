@@ -5,8 +5,6 @@ import 'package:fitnessapp/firebase_services/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fitnessapp/main.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/snackbar/snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {

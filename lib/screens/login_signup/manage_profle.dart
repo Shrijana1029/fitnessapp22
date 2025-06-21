@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitnessapp/firebase_services/firebase_auth.dart';
-import 'package:fitnessapp/main.dart';
 import 'package:fitnessapp/screens/login_signup/change_password.dart';
 import 'package:fitnessapp/screens/login_signup/edit_personalInfo.dart';
 import 'package:fitnessapp/screens/login_signup/login_page.dart';

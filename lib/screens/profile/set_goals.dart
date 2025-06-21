@@ -82,6 +82,7 @@ class _SetGoalState extends State<SetGoal> {
   @override
   Widget build(BuildContext context) {
     final SetgoalsController waterController = Get.put(SetgoalsController());
+    final FavoritesController controller = Get.put(FavoritesController());
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColorDark,
@@ -260,23 +261,23 @@ class _SetGoalState extends State<SetGoal> {
                                     thickness: 1,
                                     width: 1,
                                     color: Colors.black),
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     children: [
-                                      Text(
+                                      const Text(
                                         'Total Calories',
                                         style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
                                       ),
-                                      SizedBox(
-                                        height: 4,
-                                      ),
-                                      Text(
-                                        '0',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w500),
-                                      ),
+                                      const SizedBox(height: 4),
+                                      Obx(() => Text(
+                                            '${controller.totalCalories.value.toStringAsFixed(0)} Kcal',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          )),
                                     ],
                                   ),
                                 ),

@@ -11,12 +11,15 @@ class FavoritesController extends GetxController {
 
   final RxString selectedFoodName = ''.obs;
   final RxString selectedQuantity = ''.obs;
+  var totalCalories = 0.0.obs;
 
   @override
   void onInit() {
     super.onInit();
     loadFavorites();
     loadMealListFromPrefs();
+    loadTotalCalories();
+    loadMealList();
   }
 
   void addToFavorites(Food food) async {
@@ -29,6 +32,34 @@ class FavoritesController extends GetxController {
   void addFoodItem(String name, String quantity) {
     mealList.add({'name': name, 'quantity': quantity});
     saveMealListToPrefs();
+    calculateAndSaveCalories();
+  }
+
+  void removeFoodItem(int index) async {
+    if (index >= 0 && index < mealList.length) {
+      mealList.removeAt(index);
+      calculateAndSaveCalories(); // 🔄 recalculate after removal
+      await saveMealList();
+    }
+  }
+
+  Future<void> saveMealList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded =
+        mealList.map((e) => '${e['name']}|${e['quantity']}').toList();
+    await prefs.setStringList('mealList', encoded);
+  }
+
+  Future<void> loadMealList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = prefs.getStringList('mealList') ?? [];
+
+    mealList.value = encoded.map((entry) {
+      final parts = entry.split('|');
+      return {'name': parts[0], 'quantity': parts[1]};
+    }).toList();
+
+    calculateAndSaveCalories();
   }
 
   void saveReminder() async {
@@ -77,6 +108,16 @@ class FavoritesController extends GetxController {
     await prefs.remove('mealList');
   }
 
+  Future<void> saveTotalCalories() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('totalCalories', totalCalories.value);
+  }
+
+  Future<void> loadTotalCalories() async {
+    final prefs = await SharedPreferences.getInstance();
+    totalCalories.value = prefs.getDouble('totalCalories') ?? 0.0;
+  }
+
   void removeFromFavorites(Food food) async {
     favoriteFoods.remove(food);
     await saveFavorites();
@@ -98,6 +139,36 @@ class FavoritesController extends GetxController {
     // Match saved names with the `foodList`
     favoriteFoods.value =
         foodList.where((food) => favoriteNames.contains(food.name)).toList();
+  }
+
+  void calculateAndSaveCalories() {
+    double total = 0.0;
+
+    for (var item in mealList) {
+      final name = item['name']?.toLowerCase().trim() ?? '';
+      final quantity = double.tryParse(item['quantity'] ?? '0') ?? 0;
+
+      final matched = foodList.firstWhereOrNull(
+        (food) => food.name.toLowerCase().trim() == name,
+      );
+
+      if (matched != null) {
+        final cal = double.tryParse(
+              matched.calorie.replaceAll(RegExp(r'[^0-9.]'), ''),
+            ) ??
+            0.0;
+
+        final added = cal * quantity / 100;
+        total += added;
+
+        print(
+            '✅ $name | $quantity g → ${cal.toStringAsFixed(1)} kcal → ${added.toStringAsFixed(1)} kcal');
+      }
+    }
+
+    totalCalories.value = total;
+    saveTotalCalories();
+    print('🔥 Total Calories: ${totalCalories.value.toStringAsFixed(2)} kcal');
   }
 }
 
@@ -173,5 +244,95 @@ class SetgoalsController extends GetxController {
   void loadWaterCon() async {
     final prefs = await SharedPreferences.getInstance();
     selectedWaterCon.value = prefs.getString('waterCon') ?? '0 ml';
+  }
+}
+
+class NutrientsController extends GetxController {
+  var favoriteFoods = <Food>[].obs;
+  var mealList = <Map<String, String>>[].obs;
+
+  // New: Total calories observable
+  var totalCalories = 0.0.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadMealList();
+    loadTotalCalories();
+  }
+
+  void addFoodItem(String name, String quantity) async {
+    mealList.add({'name': name, 'quantity': quantity});
+    calculateTotalCalories(); // recalculate after adding
+    await saveMealList();
+  }
+
+  void removeFoodItem(int index) async {
+    if (index >= 0 && index < mealList.length) {
+      mealList.removeAt(index);
+      calculateTotalCalories(); // recalculate after removal
+      await saveMealList();
+    }
+  }
+
+  void calculateTotalCalories() {
+    double total = 0.0;
+
+    for (var item in mealList) {
+      final name = item['name']?.toLowerCase().trim() ?? '';
+      final quantity = double.tryParse(item['quantity'] ?? '0') ?? 0;
+
+      final matched = foodList.firstWhereOrNull(
+        (food) => food.name.toLowerCase().trim() == name,
+      );
+
+      if (matched != null) {
+        final cleanedCalorie =
+            matched.calorie.replaceAll(RegExp(r'[^0-9.]'), '');
+        final cal = double.tryParse(cleanedCalorie) ?? 0.0;
+
+        final added = cal * quantity / 100;
+        total += added;
+
+        print(
+            '→ $name: $quantity g ${cal.toStringAsFixed(1)} = ${added.toStringAsFixed(1)} kcal');
+      } else {
+        print('No match for "$name" in foodList.');
+      }
+    }
+    print('total :$total ');
+    totalCalories.value = total;
+    print('🔥 Total Calories = ${totalCalories.value.toStringAsFixed(2)} kcal');
+    saveTotalCalories();
+  }
+
+  Future<void> saveTotalCalories() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setDouble('totalCalories', totalCalories.value);
+  }
+
+  Future<void> loadTotalCalories() async {
+    final prefs = await SharedPreferences.getInstance();
+    totalCalories.value = prefs.getDouble('totalCalories') ?? 0.0;
+  }
+
+  // Persist meal list
+  Future<void> saveMealList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded =
+        mealList.map((e) => '${e['name']}|${e['quantity']}').toList();
+    await prefs.setStringList('mealList', encoded);
+  }
+
+  Future<void> loadMealList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = prefs.getStringList('mealList') ?? [];
+
+    mealList.value = encoded.map((entry) {
+      final parts = entry.split('|');
+      return {'name': parts[0], 'quantity': parts[1]};
+    }).toList();
+
+    calculateTotalCalories(); // Refresh total calories
   }
 }

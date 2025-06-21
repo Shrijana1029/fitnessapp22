@@ -63,7 +63,7 @@ class _ActivityTrackerState extends State<ActivityTracker> {
   String _calories = '0';
   //adjust thisif you know thw users weight
   //0.04 kcal = avergae per step for 65-70kg adult
-  double _calPerStep = 0.04;
+  final double _calPerStep = 0.04;
   String? selectedValue;
   bool showMonthlyContainer = false;
   String selectedOption = 'Weekly';
